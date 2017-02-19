@@ -29,4 +29,4 @@ let rec power x y = match y with
 
 let rec print_peano x = match x with 
 		Z -> print_string "\n"; print_int 0
-		| S xx -> print_num xx; print_string "\'";;
+		| S xx -> print_peano xx; print_string "\'";;
