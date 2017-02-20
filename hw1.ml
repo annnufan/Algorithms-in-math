@@ -1,5 +1,6 @@
 type peano = Z | S of peano;;
 type lambda = Var of string | Abs of string * lambda | App of lambda * lambda;;
+type 'a list = Nil | Cons of 'a*('a list);;
 
 let rec peano_of_int x = if (x == 0) then  Z else S (peano_of_int (x - 1));;
 
@@ -29,8 +30,17 @@ let rec power x y = match y with
 let rec print_peano x = match x with 
 		Z -> print_string "\n"; print_int 0
 		| S xx -> print_peano xx; print_string "\'";;
+
+
+let rec append x y = match x with
+		Nil -> y
+		| Cons(n, xx) -> Cons(n, append xx y);;
+
+let rec reverse x y = match x with
+		Nil -> y
+		| Cons(n, xx) -> reverse xx (Cons(n, y));;
                      
-let rev x = failwith "Not implemented";;
+let rev x = reverse x Nil;;
 let merge_sort x = failwith "Not implemented";;
                      
 let string_of_lambda x = failwith "Not implemented";;
