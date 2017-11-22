@@ -2,11 +2,11 @@ type algebraic_term = Var of string | Fun of string * (algebraic_term list);;
 
 (*--------------------------------------------------   System to equation   ---------------------------------------------------*)
 
-let gen_name var = 
-	let rec get term = match term with
-		Var x -> x
-		| Fun(f, lst) -> f ^ (List.fold_left (^) "" (List.map get lst)) in
-	let name_vars = List.map (fun (term1, term2) -> get term1 ^ get term2) var in
+let rec get alpha = match alpha with
+	Var x -> x
+	| Fun (f, lst) -> f ^ (List.fold_left (^) "" (List.map get lst));;
+
+let gen_name var = let name_vars = List.map (fun (term1, term2) -> get term1 ^ get term2) var in
 	"F" ^ (List.fold_left (^) "" name_vars);; 
 
 (* По списку уравнений вернуть одно уравнение *)
@@ -20,7 +20,7 @@ let system_to_equation system =
 (* Применить подстановку к уравнению *)
 let rec apply_substitution system var = match var with
 	Var x -> (try let (f, y) = List.find (fun (term, eq) -> term = x) system in y with Not_found -> var)
-	| Fun (f, x) -> Fun (f, List.map (fun arg -> apply_substitution system arg)  x);; 
+	| Fun (f, lst) -> Fun (f, List.map (fun arg -> apply_substitution system arg)  lst);; 
 
 (*----------------------------------------------------   Check solution   -----------------------------------------------------*)
 
@@ -37,13 +37,15 @@ let check_solution eq1 eq2 = List.for_all (fun (term1, term2) -> check_equals (a
 exception Not_solved;;
 
 let rec check_used var eq= match eq with
-	Var x -> var = x
+	Var x -> x = var
 	| Fun (f, x) -> List.exists (check_used var) x;;
 
-let rec map_terms var term  = fun (x, y) -> (apply_substitution [(var, term)] x, apply_substitution [(var, term)] y);;
+let map_terms var term  = fun (x, y) -> (apply_substitution [(var, term)] x, apply_substitution [(var, term)] y);;
 
 let rec unify lst1 lst2 = match lst1 with
-	[] -> List.map (fun (term1, term2) -> match (term1, term2) with (Var x, _) -> (x, term2) | _ -> failwith "Error in unify") lst2
+	[] -> List.map (fun (term1, term2) -> match (term1, term2) with 
+			(Var x, _) -> (x, term2) 
+			| _ -> failwith "Error in unify") lst2
 	| (term1, term2) :: term -> if check_equals term1 term2 then 
 			unify term lst2
 		else
@@ -51,7 +53,7 @@ let rec unify lst1 lst2 = match lst1 with
 				(Var x, _) ->  if check_used x term2 then 
 						raise Not_solved
 					else
-						unify (List.map (map_terms x term2) lst2) ((term1, term2) :: (List.map (map_terms x term2) lst1))
+						unify (List.map (map_terms x term2) lst1) ((term1, term2) :: (List.map (map_terms x term2) lst2))
 				| (Fun(f, x), Var y) -> unify ((term2, term1) :: term) lst2
 				| (Fun(f, x), Fun(g, y)) -> if f = g then 
 						(try let decomposed = List.combine x y in unify (decomposed @ term) lst2
